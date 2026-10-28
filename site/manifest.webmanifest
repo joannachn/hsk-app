@@ -1,0 +1,10 @@
+{
+  "name": "字表 HSK 3.0",
+  "short_name": "字表",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f7f4",
+  "theme_color": "#f5f7f4",
+  "icons": [{"src": "icon-180.png", "sizes": "180x180", "type": "image/png"},
+            {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}]
+}
