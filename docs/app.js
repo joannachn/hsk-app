@@ -1,7 +1,7 @@
 "use strict";
 
 // Bei jeder veröffentlichten Änderung hochzählen; steht unten in den Optionen.
-const APP_VERSION = "29.10.2026 · 3 (Kenne-ich-schon-Balken)";
+const APP_VERSION = "29.10.2026 · 4 (ganze Stufe als bekannt)";
 
 // ---------- Wortliste ----------
 // Zeilen aus data/hsk30.js: [Zeichen, Pinyin, Englisch, Stufe, Rang, Wortverbindungen?, Satz?, Satz-Pinyin?, Satz-Englisch?]
@@ -511,6 +511,7 @@ function renderOptions() {
       <label class="check"><input type="checkbox" id="tones" ${s.tones ? "checked" : ""}> Pinyin nach Tönen einfärben</label>
       <label class="check"><input type="checkbox" id="pinyinFront" ${s.pinyinFront ? "checked" : ""}> Pinyin schon auf der Vorderseite zeigen</label>
     </section>
+    ${knownLevelsHtml()}
     <section class="panel"><h3>Sicherung</h3>
       <p class="small muted">${cloud.db ? "Dein Fortschritt wird in deinem Konto gespeichert und zwischen deinen Geräten abgeglichen." : "Dein Fortschritt liegt nur in diesem Browser. Lade ab und zu eine Sicherung herunter."}</p>
       <div class="row"><button class="btn" data-act="export">Sicherung herunterladen</button>
@@ -519,6 +520,48 @@ function renderOptions() {
     <p class="muted small">Wortliste: HSK 3.0 (2021) aus „complete-hsk-vocabulary“ (MIT), englische Bedeutungen aus CC-CEDICT (CC BY-SA). Wortverbindungen und Beispielsätze für HSK 1–6 von Claude verfasst.</p>
     <p class="muted small">Version ${esc(APP_VERSION)}</p>`;
   markSegs();
+}
+
+// Ganze Stufen als bekannt markieren (oder wieder freigeben); "confirmLevel" hält die Rückfrage offen.
+let confirmLevel = null;
+function knownLevelsHtml() {
+  const rows = LEVELS.map((lv) => {
+    const ws = WORDS.filter((w) => w.lv === lv);
+    const known = ws.filter((w) => (S.notes[w.k] || {}).skip).length;
+    const all = known === ws.length;
+    if (confirmLevel === lv) {
+      return `<div class="lvrow confirm"><span>${all ? `${levelName(lv)} wieder abfragen?` : `Alle ${ws.length} Wörter aus ${levelName(lv)} als bekannt markieren?`}</span>
+        <span class="row"><button class="btn primary" data-known-level="${lv}" data-mode="${all ? "unskip" : "skip"}">Ja</button><button class="btn" data-act="cancel-level">Abbrechen</button></span></div>`;
+    }
+    return `<div class="lvrow"><span>${levelName(lv)} <span class="muted small">${known}/${ws.length} bekannt</span></span>
+      <button class="btn" data-ask-level="${lv}">${all ? "Wieder abfragen" : "Alle kenne ich"}</button></div>`;
+  }).join("");
+  return `<section class="panel"><h3>Ganze Stufe überspringen</h3>
+    <p class="small muted">Markiert alle Wörter einer Stufe als „Kenne ich schon“. Sie werden dann nicht mehr abgefragt. Einzelne Wörter holst du in der Wortliste mit „Doch wieder abfragen“ zurück.</p>
+    ${rows}</section>`;
+}
+function setLevelKnown(lv, skip) {
+  const shards = new Set();
+  const now = Date.now();
+  for (const w of WORDS) {
+    if (w.lv !== lv) continue;
+    const n = S.notes[w.k] || {};
+    if (!!n.skip === skip) continue;
+    n.skip = skip; n.t = now; S.notes[w.k] = n;
+    shards.add(shardOf(w.k));
+  }
+  // Neue Wörter sollen aus einer Stufe kommen, die noch etwas zu lernen hat.
+  if (skip && S.settings.levels.includes(lv)) {
+    S.settings.levels = S.settings.levels.filter((l) => l !== lv);
+    if (!S.settings.levels.length) S.settings.levels = [Math.min(7, lv + 1)];
+    S.settings.t = now;
+    shards.add("settings");
+  }
+  confirmLevel = null;
+  session = null;
+  markDirty(...shards);
+  toast(skip ? `${levelName(lv)} als bekannt markiert` : `${levelName(lv)} wird wieder abgefragt`);
+  renderOptions();
 }
 
 // Markiert gewählte Optionen; ersetzt CSS :has(), das ältere Safari-Versionen nicht kennen.
@@ -590,7 +633,7 @@ function rerenderDetail(k) {
 // ---------- Ereignisse ----------
 let noteTimer = null;
 document.addEventListener("click", async (ev) => {
-  const t = ev.target.closest("[data-act],[data-rate],[data-lv],[data-word],[data-speak],[data-gen],[data-learn],[data-skip]");
+  const t = ev.target.closest("[data-act],[data-rate],[data-lv],[data-word],[data-speak],[data-gen],[data-learn],[data-skip],[data-ask-level],[data-known-level]");
   if (!t) return;
   const d = t.dataset;
   if (d.act === "close" && ev.target !== t) return; // Klick in das Sheet, nicht auf den Hintergrund
@@ -598,6 +641,9 @@ document.addEventListener("click", async (ev) => {
   else if (d.act === "flip") { session.flipped = true; renderCard(); }
   else if (d.act === "stop") { session = null; render(); }
   else if (d.act === "known") markKnown();
+  else if (d.act === "cancel-level") { confirmLevel = null; renderOptions(); }
+  else if (d.askLevel) { confirmLevel = +d.askLevel; renderOptions(); }
+  else if (d.knownLevel) setLevelKnown(+d.knownLevel, d.mode === "skip");
   else if (d.act === "more") { wordsState.limit += 150; renderWords(); }
   else if (d.act === "close") { document.getElementById("layer").innerHTML = ""; if (currentRoute() === "woerter") renderWords(); }
   else if (d.act === "export") exportBackup();

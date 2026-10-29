@@ -195,6 +195,10 @@ ul.words .t .p { font-size: 14px; color: var(--ink-2); }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg label.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .seg label:focus-within { outline: 2px solid var(--jade); outline-offset: 2px; }
+.lvrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-block: 4px; }
+.lvrow + .lvrow { border-top: 1px solid var(--line); padding-top: 8px; }
+.lvrow .btn { padding: 6px 14px; font-size: 14px; }
+.lvrow.confirm { background: var(--jade-soft); border-radius: 10px; padding: 10px 12px; }
 .check { display: flex; gap: 10px; align-items: center; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); z-index: 30; background: var(--ink); color: var(--paper); padding: 9px 16px; border-radius: 999px; font-size: 14px; max-width: calc(100% - 32px); }
 .help summary { cursor: pointer; }
@@ -222,7 +226,7 @@ ul.words .t .p { font-size: 14px; color: var(--ink-2); }
 <div id="layer"></div>
 
 <script src="data/hsk30.js?v=85362f5ac7"></script>
-<script src="app.js?v=f84b9bf5c5"></script>
+<script src="app.js?v=2e92d1ed82"></script>
 
 </body>
 </html>
