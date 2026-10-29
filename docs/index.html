@@ -115,6 +115,11 @@ nav.tabs a[aria-current="page"] { color: var(--jade); }
 .py { font-size: 20px; letter-spacing: .01em; }
 .py .s1 { color: var(--t1) } .py .s2 { color: var(--t2) } .py .s3 { color: var(--t3) } .py .s4 { color: var(--t4) } .py .s5 { color: var(--t5) }
 .notones .py span { color: inherit; }
+/* Aufgedeckt: Karte kompakt, damit Zeichen, Bedeutung und Bewertung zusammen auf den Bildschirm passen */
+.card.flipped { min-height: 0; gap: 10px; }
+.card.flipped .front { flex: none; padding-block: 0; gap: 4px; }
+.card.flipped .bighan { font-size: clamp(48px, 14vw, 72px); }
+.card.flipped .back { padding-top: 12px; gap: 12px; }
 .back { display: flex; flex-direction: column; gap: 14px; border-top: 1px dashed var(--line); padding-top: 16px; }
 .mean { font-size: 20px; font-weight: 600; }
 .en { font-size: 13px; color: var(--ink-3); }

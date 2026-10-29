@@ -310,8 +310,9 @@ function toast(msg) {
   setTimeout(() => el.remove(), 2600);
 }
 
-// Detailbereich eines Wortes (Kartenrückseite und Wortdetail teilen ihn)
-function detailHtml(w) {
+// Kartenrückseite und Wortdetail teilen sich diesen Bereich; "afterMeaning" setzt die Lernrunde
+// direkt unter die Bedeutung, damit die Bewertungsknöpfe ohne Scrollen erreichbar sind.
+function detailHtml(w, afterMeaning = "") {
   const m = meaning(w);
   const coll = collocations(w);
   const exs = examples(w);
@@ -325,6 +326,7 @@ function detailHtml(w) {
     <div>
       <div class="mean">${esc(m)}</div>${n.mean ? `<div class="en">Wörterbuch: ${esc(w.en)}</div>` : ""}
     </div>
+    ${afterMeaning}
     ${needGen ? `<div class="gen" data-gen-box="${esc(w.k)}"><button class="btn" data-gen="${esc(w.k)}">Beispielsatz ergänzen</button><span class="muted small">mit Claude</span></div>` : ""}
     ${coll.length ? `<div class="opt"><span class="lbl">Typische Verbindungen</span><div class="chips">${coll.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div></div>` : ""}
     ${exs.map((e) => exHtml(e, w)).join("")}
@@ -399,18 +401,18 @@ function renderCard() {
   const isNew = !S.cards[ck];
   const pct = session.total ? Math.round((session.done / session.total) * 100) : 0;
   const front = dir === "r"
-    ? `<div class="bighan">${esc(w.h)}</div>${S.settings.pinyinFront ? pyHtml(w.py) : ""}<div class="ask">Was bedeutet das?</div>`
-    : `<div class="prompt-de">${esc(meaning(w))}</div><div class="ask">Wie heißt das auf Chinesisch?</div>`;
+    ? `<div class="bighan">${esc(w.h)}</div>${S.settings.pinyinFront ? pyHtml(w.py) : ""}${session.flipped ? "" : '<div class="ask">Was bedeutet das?</div>'}`
+    : `<div class="prompt-de">${esc(meaning(w))}</div>${session.flipped ? "" : '<div class="ask">Wie heißt das auf Chinesisch?</div>'}`;
+  const rateHtml = `<div class="rate">${[[1, "Nochmal"], [2, "Schwer"], [3, "Gut"], [4, "Leicht"]].map(([r, l]) => `<button class="r${r}" data-rate="${r}">${l}<small>${intervalLabel(c, r)}</small></button>`).join("")}</div>`;
   view().innerHTML = `
     <div class="progress" aria-label="Fortschritt der Runde"><i style="width:${pct}%"></i></div>
-    <article class="card" aria-live="polite">
+    <article class="card${session.flipped ? " flipped" : ""}" aria-live="polite">
       <div class="meta"><span>${isNew ? "NEUES WORT" : c.l !== undefined ? "WIRD GELERNT" : "WIEDERHOLUNG"}</span><span>noch ${session.queue.length}</span></div>
       <div class="front">${front}${dir === "p" && session.flipped ? `<div class="bighan">${esc(w.h)}</div>` : ""}</div>
-      ${session.flipped ? `<div class="back">${detailHtml(w)}</div>` : ""}
+      ${session.flipped
+        ? `<div class="back">${detailHtml(w, rateHtml)}</div>`
+        : `<button class="btn primary big" data-act="flip">Aufdecken</button>`}
     </article>
-    ${session.flipped
-      ? `<div class="rate">${[[1, "Nochmal"], [2, "Schwer"], [3, "Gut"], [4, "Leicht"]].map(([r, l]) => `<button class="r${r}" data-rate="${r}">${l}<small>${intervalLabel(c, r)}</small></button>`).join("")}</div>`
-      : `<button class="btn primary big" data-act="flip">Aufdecken</button>`}
     <div class="row" style="justify-content:space-between"><button class="btn ghost small" data-act="stop">Runde beenden</button><span class="muted small">Tasten: Leertaste, 1–4</span></div>`;
 }
 
