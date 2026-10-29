@@ -4,6 +4,7 @@ The Claude artifact page (index.html) has no <head>; the artifact host adds one.
 This script wraps it in a full document so it also runs in a plain browser,
 including older iOS Safari, and adds what a home-screen app needs.
 """
+import hashlib
 import os
 import shutil
 
@@ -49,6 +50,11 @@ MANIFEST = """{
 def main():
     os.makedirs(os.path.join(OUT, "data"), exist_ok=True)
     page = open(os.path.join(HERE, "index.html"), encoding="utf-8").read()
+    # Versionsnummer an die Skripte hängen, damit Safari (vor allem die App auf dem
+    # Home-Bildschirm) nach jeder Änderung die neue Fassung lädt statt der zwischengespeicherten.
+    for name in ("app.js", "data/hsk30.js"):
+        digest = hashlib.sha1(open(os.path.join(HERE, name), "rb").read()).hexdigest()[:10]
+        page = page.replace(f'src="{name}"', f'src="{name}?v={digest}"')
     with open(os.path.join(OUT, "index.html"), "w", encoding="utf-8") as f:
         f.write(HEAD + page + "\n</body>\n</html>\n")
     shutil.copy(os.path.join(HERE, "app.js"), os.path.join(OUT, "app.js"))

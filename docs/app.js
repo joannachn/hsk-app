@@ -1,5 +1,8 @@
 "use strict";
 
+// Bei jeder veröffentlichten Änderung hochzählen; steht unten in den Optionen.
+const APP_VERSION = "29.10.2026 · 3 (Kenne-ich-schon-Balken)";
+
 // ---------- Wortliste ----------
 // Zeilen aus data/hsk30.js: [Zeichen, Pinyin, Englisch, Stufe, Rang, Wortverbindungen?, Satz?, Satz-Pinyin?, Satz-Englisch?]
 const WORDS = (window.HSK_WORDS || []).map((r) => ({
@@ -513,7 +516,8 @@ function renderOptions() {
       <div class="row"><button class="btn" data-act="export">Sicherung herunterladen</button>
         <label class="btn" for="importFile">Sicherung einspielen</label><input type="file" id="importFile" accept="application/json,.json" hidden></div>
     </section>
-    <p class="muted small">Wortliste: HSK 3.0 (2021) aus „complete-hsk-vocabulary“ (MIT), englische Bedeutungen aus CC-CEDICT (CC BY-SA). Wortverbindungen und Beispielsätze für HSK 1–6 von Claude verfasst.</p>`;
+    <p class="muted small">Wortliste: HSK 3.0 (2021) aus „complete-hsk-vocabulary“ (MIT), englische Bedeutungen aus CC-CEDICT (CC BY-SA). Wortverbindungen und Beispielsätze für HSK 1–6 von Claude verfasst.</p>
+    <p class="muted small">Version ${esc(APP_VERSION)}</p>`;
   markSegs();
 }
 
