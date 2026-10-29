@@ -211,7 +211,7 @@ function nextNewCards(n) {
   const out = [];
   for (const w of activeWords()) {
     if ((S.notes[w.k] || {}).skip) continue;
-    const d = dirs().find((d) => !S.cards[w.k + "#" + d]);
+    const d = dirs().find((d) => !S.cards[w.k + "#" + d] && !(session && session.queue.includes(w.k + "#" + d)));
     if (!d) continue;
     out.push(w.k + "#" + d);
     if (out.length >= n) break;
@@ -258,6 +258,27 @@ function rate(r) {
   else session.done++;
   session.flipped = false;
   markDirty(...shards, "log");
+  render();
+}
+
+// "Kenne ich schon": Wort aus allen Abfragen nehmen. Ein neues Wort zählt nicht als gelernt,
+// deshalb rückt das nächste neue Wort nach, solange das Tageskontingent reicht.
+function markKnown() {
+  const ck = session.queue[0];
+  const wk = wordOfCard(ck);
+  const wasNew = session.fresh.has(ck);
+  const n = S.notes[wk] || {};
+  n.skip = true; n.t = Date.now(); S.notes[wk] = n;
+  session.queue = session.queue.filter((k) => wordOfCard(k) !== wk);
+  session.done++;
+  if (wasNew) {
+    session.fresh.delete(ck);
+    const next = nextNewCards(Math.max(0, S.settings.newPerDay - newToday()) - session.fresh.size)[0];
+    if (next) { session.queue.push(next); session.fresh.add(next); session.total++; }
+  }
+  session.flipped = false;
+  markDirty(shardOf(wk));
+  toast(`${BY_KEY.get(wk).h} wird nicht mehr abgefragt`);
   render();
 }
 
@@ -403,7 +424,8 @@ function renderCard() {
   const front = dir === "r"
     ? `<div class="bighan">${esc(w.h)}</div>${S.settings.pinyinFront ? pyHtml(w.py) : ""}${session.flipped ? "" : '<div class="ask">Was bedeutet das?</div>'}`
     : `<div class="prompt-de">${esc(meaning(w))}</div>${session.flipped ? "" : '<div class="ask">Wie heißt das auf Chinesisch?</div>'}`;
-  const rateHtml = `<div class="rate">${[[1, "Nochmal"], [2, "Schwer"], [3, "Gut"], [4, "Leicht"]].map(([r, l]) => `<button class="r${r}" data-rate="${r}">${l}<small>${intervalLabel(c, r)}</small></button>`).join("")}</div>`;
+  const rateHtml = `<div class="rate">${[[1, "Nochmal"], [2, "Schwer"], [3, "Gut"], [4, "Leicht"]].map(([r, l]) => `<button class="r${r}" data-rate="${r}">${l}<small>${intervalLabel(c, r)}</small></button>`).join("")}</div>
+    <button class="known" data-act="known">Kenne ich schon · nicht mehr abfragen</button>`;
   view().innerHTML = `
     <div class="progress" aria-label="Fortschritt der Runde"><i style="width:${pct}%"></i></div>
     <article class="card${session.flipped ? " flipped" : ""}" aria-live="polite">
@@ -571,6 +593,7 @@ document.addEventListener("click", async (ev) => {
   if (d.act === "start") startSession();
   else if (d.act === "flip") { session.flipped = true; renderCard(); }
   else if (d.act === "stop") { session = null; render(); }
+  else if (d.act === "known") markKnown();
   else if (d.act === "more") { wordsState.limit += 150; renderWords(); }
   else if (d.act === "close") { document.getElementById("layer").innerHTML = ""; if (currentRoute() === "woerter") renderWords(); }
   else if (d.act === "export") exportBackup();
