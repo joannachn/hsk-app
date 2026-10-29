@@ -1,4 +1,4 @@
-"""Builds the standalone web app in site/ (for GitHub Pages or any static host).
+"""Builds the standalone web app in docs/ (for GitHub Pages or any static host).
 
 The Claude artifact page (index.html) has no <head>; the artifact host adds one.
 This script wraps it in a full document so it also runs in a plain browser,
@@ -8,7 +8,7 @@ import os
 import shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "site")
+OUT = os.path.join(HERE, "docs")
 
 HEAD = """<!doctype html>
 <html lang="de">
@@ -58,7 +58,7 @@ def main():
     with open(os.path.join(OUT, "manifest.webmanifest"), "w", encoding="utf-8") as f:
         f.write(MANIFEST)
     open(os.path.join(OUT, ".nojekyll"), "w").close()
-    print("site/ gebaut:", sorted(os.listdir(OUT)))
+    print("docs/ gebaut:", sorted(os.listdir(OUT)))
 
 
 if __name__ == "__main__":
